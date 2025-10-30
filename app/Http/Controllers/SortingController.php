@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GoogleDriveToken;
 use App\Models\SortingSession;
 use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
@@ -27,9 +28,13 @@ class SortingController extends Controller
             ->whereIn('status', ['setup', 'active', 'paused'])
             ->first();
 
+        // Check if Google Drive is connected
+        $driveToken = GoogleDriveToken::where('user_id', Auth::id())->first();
+
         return Inertia::render('Sorting/Index', [
             'session' => $session,
-            'googleConnected' => session()->has('google_drive_token'),
+            'googleDriveConnected' => $driveToken !== null,
+            'googleDriveEmail' => $driveToken?->google_email,
         ]);
     }
 
@@ -352,16 +357,16 @@ class SortingController extends Controller
     }
 
     /**
-     * Set access token from session
+     * Set access token from database
      */
     private function setTokenFromSession()
     {
-        $token = session('google_drive_token');
+        $tokenRecord = GoogleDriveToken::where('user_id', Auth::id())->first();
 
-        if (!$token) {
+        if (!$tokenRecord) {
             throw new \Exception('Google Drive not connected. Please authorize first.');
         }
 
-        $this->driveService->setAccessToken(json_encode($token));
+        $this->driveService->setAccessToken(json_encode($tokenRecord->getTokenArray()));
     }
 }

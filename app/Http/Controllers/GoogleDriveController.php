@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GoogleDriveToken;
 use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
 
 class GoogleDriveController extends Controller
 {
@@ -16,35 +18,71 @@ class GoogleDriveController extends Controller
     }
 
     /**
-     * Redirect to Google OAuth
+     * Redirect to Google OAuth for Drive access
      */
     public function redirectToGoogle()
     {
-        return redirect($this->driveService->getAuthUrl());
+        return Socialite::driver('google')
+            ->scopes(['https://www.googleapis.com/auth/drive'])
+            ->with(['access_type' => 'offline', 'prompt' => 'consent'])
+            ->redirect();
     }
 
     /**
-     * Handle Google OAuth callback
+     * Handle Google OAuth callback for Drive access
      */
     public function handleGoogleCallback(Request $request)
     {
-        $code = $request->get('code');
-
-        if (!$code) {
-            return redirect()->route('sorting.index')->with('error', 'Authorization failed');
-        }
-
         try {
-            $token = $this->driveService->authenticate($code);
+            $googleUser = Socialite::driver('google')->user();
+            $token = $googleUser->token;
+            $refreshToken = $googleUser->refreshToken;
+            $expiresIn = $googleUser->expiresIn;
 
-            // Store access token in session
-            Session::put('google_drive_token', $token);
+            // Store or update token in database
+            GoogleDriveToken::updateOrCreate(
+                ['user_id' => Auth::id()],
+                [
+                    'access_token' => $token,
+                    'refresh_token' => $refreshToken,
+                    'expires_in' => $expiresIn,
+                    'expires_at' => now()->addSeconds($expiresIn),
+                    'google_email' => $googleUser->getEmail(),
+                ]
+            );
 
-            return redirect()->route('sorting.index')->with('success', 'Google Drive connected successfully');
+            return redirect()->route('sorting.index')
+                ->with('success', 'Google Drive connected successfully!');
+
         } catch (\Exception $e) {
-            \Log::error('Google OAuth failed: ' . $e->getMessage());
-            return redirect()->route('sorting.index')->with('error', 'Failed to connect to Google Drive');
+            \Log::error('Google Drive OAuth failed: ' . $e->getMessage());
+            return redirect()->route('sorting.index')
+                ->with('error', 'Failed to connect to Google Drive. Please try again.');
         }
+    }
+
+    /**
+     * Disconnect Google Drive
+     */
+    public function disconnect()
+    {
+        GoogleDriveToken::where('user_id', Auth::id())->delete();
+
+        return redirect()->route('sorting.index')
+            ->with('success', 'Google Drive disconnected successfully');
+    }
+
+    /**
+     * Check connection status
+     */
+    public function checkConnection()
+    {
+        $token = GoogleDriveToken::where('user_id', Auth::id())->first();
+
+        return response()->json([
+            'connected' => $token !== null,
+            'google_email' => $token?->google_email,
+        ]);
     }
 
     /**
@@ -53,7 +91,7 @@ class GoogleDriveController extends Controller
     public function listFolders(Request $request)
     {
         try {
-            $this->setTokenFromSession();
+            $this->setTokenFromDatabase();
             $parentId = $request->get('parent_id');
             $folders = $this->driveService->listFolders($parentId);
 
@@ -75,7 +113,7 @@ class GoogleDriveController extends Controller
     public function listImages(Request $request)
     {
         try {
-            $this->setTokenFromSession();
+            $this->setTokenFromDatabase();
             $folderId = $request->get('folder_id');
 
             if (!$folderId) {
@@ -110,7 +148,7 @@ class GoogleDriveController extends Controller
         ]);
 
         try {
-            $this->setTokenFromSession();
+            $this->setTokenFromDatabase();
             $folder = $this->driveService->createFolder(
                 $request->name,
                 $request->parent_id
@@ -139,7 +177,7 @@ class GoogleDriveController extends Controller
         ]);
 
         try {
-            $this->setTokenFromSession();
+            $this->setTokenFromDatabase();
             $result = $this->driveService->moveFile(
                 $request->file_id,
                 $request->destination_folder_id
@@ -162,7 +200,7 @@ class GoogleDriveController extends Controller
     public function getFile(Request $request, string $fileId)
     {
         try {
-            $this->setTokenFromSession();
+            $this->setTokenFromDatabase();
             $file = $this->driveService->getFile($fileId);
 
             if (!$file) {
@@ -185,16 +223,22 @@ class GoogleDriveController extends Controller
     }
 
     /**
-     * Set access token from session
+     * Set access token from database
      */
-    private function setTokenFromSession()
+    private function setTokenFromDatabase()
     {
-        $token = Session::get('google_drive_token');
+        $tokenRecord = GoogleDriveToken::where('user_id', Auth::id())->first();
 
-        if (!$token) {
+        if (!$tokenRecord) {
             throw new \Exception('Google Drive not connected. Please authorize first.');
         }
 
-        $this->driveService->setAccessToken(json_encode($token));
+        // Check if token is expired and refresh if needed
+        if ($tokenRecord->isExpired() && $tokenRecord->refresh_token) {
+            // TODO: Implement token refresh logic
+            // For now, just use the existing token
+        }
+
+        $this->driveService->setAccessToken(json_encode($tokenRecord->getTokenArray()));
     }
 }

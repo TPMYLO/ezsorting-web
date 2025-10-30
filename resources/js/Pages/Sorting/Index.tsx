@@ -34,10 +34,11 @@ interface SortingSession {
 
 interface Props extends PageProps {
     session: SortingSession | null;
-    googleConnected: boolean;
+    googleDriveConnected: boolean;
+    googleDriveEmail?: string;
 }
 
-export default function Index({ auth, session: initialSession, googleConnected }: Props) {
+export default function Index({ auth, session: initialSession, googleDriveConnected, googleDriveEmail }: Props) {
     const [session, setSession] = useState<SortingSession | null>(initialSession);
     const [currentStep, setCurrentStep] = useState<'welcome' | 'setup' | 'sorting'>('welcome');
 
@@ -77,10 +78,23 @@ export default function Index({ auth, session: initialSession, googleConnected }
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">
                         EzSorting - Photo Organizer
                     </h2>
-                    {googleConnected && (
-                        <span className="text-sm text-green-600 font-medium">
-                            Google Drive Connected
-                        </span>
+                    {googleDriveConnected && (
+                        <div className="flex items-center text-sm">
+                            <svg
+                                className="w-4 h-4 text-green-600 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                            <span className="text-green-600 font-medium">
+                                Drive: {googleDriveEmail || 'Connected'}
+                            </span>
+                        </div>
                     )}
                 </div>
             }
@@ -91,7 +105,8 @@ export default function Index({ auth, session: initialSession, googleConnected }
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {currentStep === 'welcome' && (
                         <WelcomeStep
-                            googleConnected={googleConnected}
+                            googleDriveConnected={googleDriveConnected}
+                            googleDriveEmail={googleDriveEmail}
                             onSessionCreated={handleSessionCreated}
                         />
                     )}

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\GoogleDriveController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SortingController;
@@ -31,15 +32,27 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Google OAuth Login Routes (outside auth middleware)
+Route::prefix('auth/google')->name('auth.google.')->group(function () {
+    Route::get('/', [SocialiteController::class, 'redirectToGoogle'])->name('redirect');
+    Route::get('/callback', [SocialiteController::class, 'handleGoogleCallback'])->name('callback');
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Google Drive Routes
-    Route::prefix('google')->name('google.')->group(function () {
-        Route::get('/auth', [GoogleDriveController::class, 'redirectToGoogle'])->name('auth');
+    // Google Drive Routes (for sorting, separate from login)
+    Route::prefix('google-drive')->name('google.drive.')->group(function () {
+        Route::get('/connect', [GoogleDriveController::class, 'redirectToGoogle'])->name('connect');
         Route::get('/callback', [GoogleDriveController::class, 'handleGoogleCallback'])->name('callback');
+        Route::post('/disconnect', [GoogleDriveController::class, 'disconnect'])->name('disconnect');
+        Route::get('/check', [GoogleDriveController::class, 'checkConnection'])->name('check');
+    });
+
+    // Google Drive API Routes
+    Route::prefix('google')->name('google.')->group(function () {
         Route::get('/folders', [GoogleDriveController::class, 'listFolders'])->name('folders.list');
         Route::get('/images', [GoogleDriveController::class, 'listImages'])->name('images.list');
         Route::post('/folders', [GoogleDriveController::class, 'createFolder'])->name('folders.create');

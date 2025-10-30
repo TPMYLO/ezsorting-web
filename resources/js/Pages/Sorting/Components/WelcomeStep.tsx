@@ -9,18 +9,19 @@ interface Folder {
 }
 
 interface Props {
-    googleConnected: boolean;
+    googleDriveConnected: boolean;
+    googleDriveEmail?: string;
     onSessionCreated: (session: any) => void;
 }
 
-export default function WelcomeStep({ googleConnected, onSessionCreated }: Props) {
+export default function WelcomeStep({ googleDriveConnected, googleDriveEmail, onSessionCreated }: Props) {
     const [loading, setLoading] = useState(false);
     const [folders, setFolders] = useState<Folder[]>([]);
     const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
     const [showFolderPicker, setShowFolderPicker] = useState(false);
 
     const handleConnectGoogleDrive = () => {
-        window.location.href = '/google/auth';
+        window.location.href = '/google-drive/connect';
     };
 
     const handleChooseFolder = async () => {
@@ -134,42 +135,80 @@ export default function WelcomeStep({ googleConnected, onSessionCreated }: Props
                             </div>
                         </div>
 
-                        {!googleConnected ? (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                        {!googleDriveConnected ? (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                                 <div className="flex items-start">
                                     <svg
-                                        className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
+                                        className="w-6 h-6 text-blue-600 mt-0.5 mr-3 flex-shrink-0"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
                                     >
                                         <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                                         />
                                     </svg>
-                                    <div>
-                                        <h3 className="text-sm font-medium text-yellow-800 mb-1">
-                                            Connect Google Drive
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-semibold text-blue-900 mb-2">
+                                            Connect Google Drive for Sorting
                                         </h3>
-                                        <p className="text-sm text-yellow-700 mb-3">
-                                            You need to connect your Google Drive account to continue
+                                        <p className="text-sm text-blue-700 mb-4">
+                                            To start sorting photos, you need to connect your Google Drive account. This allows the app to access and organize your photos directly in Google Drive.
                                         </p>
-                                        <PrimaryButton onClick={handleConnectGoogleDrive}>
+                                        <p className="text-xs text-blue-600 mb-4 bg-blue-100 p-2 rounded">
+                                            <strong>Note:</strong> This is separate from your login. You can use a different Google account for Drive access.
+                                        </p>
+                                        <PrimaryButton onClick={handleConnectGoogleDrive} className="inline-flex items-center">
+                                            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                            </svg>
                                             Connect Google Drive
                                         </PrimaryButton>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center">
-                                <PrimaryButton
-                                    onClick={handleChooseFolder}
-                                    disabled={loading}
-                                    className="px-8 py-3 text-lg"
-                                >
-                                    {loading ? 'Loading...' : 'Choose Source Folder'}
-                                </PrimaryButton>
+                            <div>
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                                    <div className="flex items-center">
+                                        <svg
+                                            className="w-5 h-5 text-green-600 mr-2"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-green-800">
+                                                Google Drive Connected
+                                            </p>
+                                            {googleDriveEmail && (
+                                                <p className="text-xs text-green-700 mt-0.5">
+                                                    {googleDriveEmail}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <PrimaryButton
+                                        onClick={handleChooseFolder}
+                                        disabled={loading}
+                                        className="px-8 py-3 text-lg"
+                                    >
+                                        {loading ? 'Loading...' : 'Choose Source Folder'}
+                                    </PrimaryButton>
+                                </div>
                             </div>
                         )}
                     </div>
