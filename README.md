@@ -1,66 +1,258 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EzSorting Web - Photo Organizer for Google Drive
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web untuk sorting dan mengorganisir foto di Google Drive dengan mudah dan cepat. Versi web dari aplikasi desktop EzSorting yang dibangun dengan Laravel, React, dan Tailwind CSS.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 3-Step Workflow yang Mudah
+1. **Pilih Source Folder** - Pilih folder dari Google Drive yang berisi foto
+2. **Buat Destination Folders** - Setup folder-folder tujuan untuk organizing (max 9 untuk keyboard shortcuts)
+3. **Start Sorting** - Preview dan sort foto dengan mouse atau keyboard shortcuts
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Fitur Lengkap
+- **Google Drive Integration** - Langsung bekerja dengan foto di Google Drive
+- **Preview Foto Realtime** - Lihat preview foto dengan informasi detail (size, format, dimensi)
+- **Keyboard Shortcuts** - Sort cepat dengan keyboard:
+  - `1-9`: Move foto ke folder yang sesuai
+  - `←`: Previous image
+  - `→`: Next/Skip image
+- **Automatic File Moving** - Foto otomatis dipindahkan ke folder yang dipilih
+- **Statistik Realtime** - Track progress (Total, Sorted, Remaining)
+- **Support Multiple Format**:
+  - Standard: JPG, JPEG, PNG, HEIC, GIF, WebP
+  - RAW: ARW, CR2, CR3, NEF, NRW, RAF, RW2, ORF, PEF, DNG
+- **Responsive Design** - Works di desktop, tablet, dan mobile
+- **Modern UI** - Beautiful interface dengan Tailwind CSS
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech Stack
 
-## Learning Laravel
+- **Backend**: Laravel 10 (PHP 8.2+)
+- **Frontend**: React 18 + TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: MySQL/PostgreSQL
+- **API**: Google Drive API
+- **Build Tool**: Vite
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Requirements
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP 8.2 atau lebih tinggi
+- Composer
+- Node.js 16+ dan NPM
+- MySQL 5.7+ atau PostgreSQL
+- Google Cloud Project dengan Google Drive API enabled
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation
 
-## Laravel Sponsors
+### 1. Clone Repository
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+git clone https://github.com/TPMYLO/ezsorting-web.git
+cd ezsorting-web
+```
 
-### Premium Partners
+### 2. Install Dependencies
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+# Install PHP dependencies
+composer install
 
-## Contributing
+# Install Node dependencies
+npm install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Environment Configuration
 
-## Code of Conduct
+```bash
+# Copy environment file
+cp .env.example .env
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Generate application key
+php artisan key:generate
+```
 
-## Security Vulnerabilities
+### 4. Database Setup
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Edit `.env` file dan configure database connection:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ezsorting_web
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Run migrations:
+
+```bash
+php artisan migrate
+```
+
+### 5. Google Drive API Setup
+
+#### A. Create Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project atau pilih existing project
+3. Enable **Google Drive API**:
+   - Go to "APIs & Services" > "Library"
+   - Search for "Google Drive API"
+   - Click "Enable"
+
+#### B. Create OAuth 2.0 Credentials
+
+1. Go to "APIs & Services" > "Credentials"
+2. Click "Create Credentials" > "OAuth client ID"
+3. Configure OAuth consent screen jika belum:
+   - User Type: External (untuk testing) atau Internal (untuk organization)
+   - Add scopes: `https://www.googleapis.com/auth/drive`
+4. Create OAuth Client ID:
+   - Application type: **Web application**
+   - Authorized redirect URIs: `http://localhost:8000/google/callback` (adjust sesuai APP_URL)
+5. Download credentials atau copy **Client ID** and **Client Secret**
+
+#### C. Configure Environment
+
+Add ke `.env` file:
+
+```env
+GOOGLE_DRIVE_CLIENT_ID=your-client-id-here
+GOOGLE_DRIVE_CLIENT_SECRET=your-client-secret-here
+```
+
+### 6. Build Assets
+
+```bash
+# Development
+npm run dev
+
+# Production
+npm run build
+```
+
+### 7. Run Application
+
+```bash
+# Start Laravel server
+php artisan serve
+
+# In another terminal, start Vite dev server (for development)
+npm run dev
+```
+
+Access aplikasi di: `http://localhost:8000`
+
+## Usage
+
+### First Time Setup
+
+1. **Register/Login** - Create account atau login
+2. **Connect Google Drive**:
+   - Click "Connect Google Drive" button
+   - Authorize aplikasi untuk access Google Drive
+   - Anda akan diredirect kembali ke aplikasi
+
+### Sorting Photos
+
+#### Step 1: Choose Source Folder
+
+1. Click "Choose Source Folder"
+2. Pilih folder dari Google Drive yang berisi foto
+3. Aplikasi akan mendeteksi semua foto di folder tersebut
+
+#### Step 2: Create Destination Folders
+
+1. Masukkan nama folder di input field (contoh: "Best", "Delete", "Edit")
+2. Click "Add Folder" atau tekan Enter
+3. Ulangi untuk membuat lebih banyak folder (max 9)
+4. Anda bisa remove folder dengan click tombol ×
+5. Click "Start Sorting" ketika siap
+
+#### Step 3: Start Sorting
+
+1. Preview foto akan muncul dengan informasi detail
+2. Pilih destination folder:
+   - **Mouse**: Click folder button di sidebar
+   - **Keyboard**: Tekan angka `1-9` sesuai nomor folder
+3. Foto akan otomatis dipindahkan ke folder yang dipilih
+4. Navigation:
+   - **Previous**: Click "Previous" button atau tekan `←`
+   - **Next/Skip**: Click "Next/Skip" button atau tekan `→`
+5. Progress dipantau di sidebar (Total, Sorted, Remaining)
+6. Setelah selesai, session akan complete dan Anda bisa start over
+
+### Keyboard Shortcuts
+
+Saat sedang sorting:
+
+- `1-9`: Move foto ke folder dengan nomor tersebut
+- `←` (Arrow Left): Previous image
+- `→` (Arrow Right): Next/Skip image
+
+## Development
+
+### Project Structure
+
+```
+ezsorting-web/
+├── app/
+│   ├── Http/Controllers/
+│   │   ├── GoogleDriveController.php
+│   │   └── SortingController.php
+│   ├── Models/
+│   │   └── SortingSession.php
+│   └── Services/
+│       └── GoogleDriveService.php
+├── config/
+│   └── google.php
+├── database/
+│   └── migrations/
+├── resources/
+│   ├── js/
+│   │   ├── Pages/
+│   │   │   └── Sorting/
+│   │   │       ├── Index.tsx
+│   │   │       └── Components/
+│   │   │           ├── WelcomeStep.tsx
+│   │   │           ├── SetupStep.tsx
+│   │   │           └── SortingStep.tsx
+│   │   └── Components/
+│   └── css/
+└── routes/
+    └── web.php
+```
+
+## Troubleshooting
+
+### Google Drive Authentication Failed
+
+1. Check apakah Client ID dan Client Secret sudah benar di `.env`
+2. Pastikan redirect URI di Google Cloud Console match dengan APP_URL
+3. Clear browser cache dan cookies
+4. Try re-authorize
+
+### Images Not Loading
+
+1. Check Google Drive API quota
+2. Verify file permissions di Google Drive
+3. Check browser console untuk errors
+4. Pastikan format file supported
+
+### Database Connection Error
+
+1. Check database credentials di `.env`
+2. Pastikan database service running
+3. Run `php artisan migrate` untuk ensure tables exist
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT License
+
+## Author
+
+TPMYLO
+
+## Support
+
+Jika ada masalah atau pertanyaan, silakan create issue di repository.

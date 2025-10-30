@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google_id',
+        'avatar',
     ];
 
     /**
@@ -42,4 +44,19 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function googleDriveToken()
+    {
+        return $this->hasOne(GoogleDriveToken::class);
+    }
+
+    public function sortingSessions()
+    {
+        return $this->hasMany(SortingSession::class);
+    }
+
+    public function hasGoogleDriveConnected(): bool
+    {
+        return $this->googleDriveToken()->exists();
+    }
 }
