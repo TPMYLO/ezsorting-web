@@ -46,7 +46,7 @@ Route::middleware('auth')->group(function () {
     // Google Drive Routes (for sorting, separate from login)
     Route::prefix('google-drive')->name('google.drive.')->group(function () {
         Route::get('/connect', [GoogleDriveController::class, 'redirectToGoogle'])->name('connect');
-        Route::get('/callback', [GoogleDriveController::class, 'handleGoogleCallback'])->name('callback');
+        // Callback handled by SocialiteController using state parameter
         Route::post('/disconnect', [GoogleDriveController::class, 'disconnect'])->name('disconnect');
         Route::get('/check', [GoogleDriveController::class, 'checkConnection'])->name('check');
     });
@@ -58,6 +58,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/folders', [GoogleDriveController::class, 'createFolder'])->name('folders.create');
         Route::post('/files/move', [GoogleDriveController::class, 'moveFile'])->name('files.move');
         Route::get('/files/{fileId}', [GoogleDriveController::class, 'getFile'])->name('files.get');
+        Route::get('/preview/{fileId}', [GoogleDriveController::class, 'getPreview'])->name('preview.get');
+        Route::get('/thumbnails/{fileId}', [GoogleDriveController::class, 'getThumbnail'])->name('thumbnails.get');
     });
 
     // Sorting Routes
@@ -73,4 +75,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

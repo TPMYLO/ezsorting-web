@@ -58,6 +58,7 @@ class SortingController extends Controller
                 'user_id' => Auth::id(),
                 'source_folder_id' => $request->source_folder_id,
                 'source_folder_name' => $request->source_folder_name,
+                'destination_folders' => [], // Initialize empty array
                 'images' => $images,
                 'total_images' => count($images),
                 'sorted_images' => 0,

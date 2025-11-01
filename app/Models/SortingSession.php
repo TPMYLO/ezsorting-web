@@ -30,6 +30,11 @@ class SortingSession extends Model
         'completed_at' => 'datetime',
     ];
 
+    protected $attributes = [
+        'destination_folders' => '[]',
+        'images' => '[]',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

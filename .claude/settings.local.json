@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer show:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(php artisan tinker --execute=\"var_dump(Schema::hasTable(''google_drive_tokens'')); Schema::getColumnListing(''google_drive_tokens'');\")",
+      "Bash(php artisan tinker:*)",
+      "Bash(php artisan:*)",
+      "Bash(php artisan cache:clear:*)",
+      "Bash(php -m:*)",
+      "Bash(curl:*)",
+      "Bash(php -l:*)",
+      "Bash(npm run build:*)",
+      "Bash(storage/logs/laravel.log)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

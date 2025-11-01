@@ -20,7 +20,7 @@ interface SortingSession {
     sorted_images: number;
     remaining_images: number;
     current_image_index: number;
-    status: string;
+    status: 'setup' | 'active' | 'completed' | 'paused';
 }
 
 interface Props {
@@ -41,7 +41,7 @@ export default function SetupStep({ session, onSessionUpdate, onStartSorting, on
             return;
         }
 
-        if (session.destination_folders.length >= 9) {
+        if ((session.destination_folders?.length ?? 0) >= 9) {
             alert('Maximum 9 folders allowed for keyboard shortcuts');
             return;
         }
@@ -81,7 +81,7 @@ export default function SetupStep({ session, onSessionUpdate, onStartSorting, on
     };
 
     const handleStartSorting = async () => {
-        if (session.destination_folders.length === 0) {
+        if ((session.destination_folders?.length ?? 0) === 0) {
             alert('Please create at least one destination folder');
             return;
         }
@@ -168,18 +168,18 @@ export default function SetupStep({ session, onSessionUpdate, onStartSorting, on
                                     onChange={(e) => setFolderName(e.target.value)}
                                     placeholder="Enter folder name (e.g., Best, Delete, Edit)"
                                     className="w-full"
-                                    disabled={loading || session.destination_folders.length >= 9}
+                                    disabled={loading || (session.destination_folders?.length ?? 0) >= 9}
                                 />
                             </div>
                             <PrimaryButton
                                 type="submit"
-                                disabled={loading || !folderName.trim() || session.destination_folders.length >= 9}
+                                disabled={loading || !folderName.trim() || (session.destination_folders?.length ?? 0) >= 9}
                             >
                                 Add Folder
                             </PrimaryButton>
                         </form>
 
-                        {session.destination_folders.length >= 9 && (
+                        {(session.destination_folders?.length ?? 0) >= 9 && (
                             <p className="text-sm text-amber-600 mt-2">
                                 Maximum 9 folders reached (for keyboard shortcuts 1-9)
                             </p>
@@ -188,9 +188,9 @@ export default function SetupStep({ session, onSessionUpdate, onStartSorting, on
 
                     {/* Folders List */}
                     <div className="mb-8">
-                        {session.destination_folders.length > 0 ? (
+                        {(session.destination_folders?.length ?? 0) > 0 ? (
                             <div className="space-y-3">
-                                {session.destination_folders.map((folder, index) => (
+                                {(session.destination_folders || []).map((folder, index) => (
                                     <div
                                         key={folder.id}
                                         className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
@@ -284,7 +284,7 @@ export default function SetupStep({ session, onSessionUpdate, onStartSorting, on
                         </SecondaryButton>
                         <PrimaryButton
                             onClick={handleStartSorting}
-                            disabled={loading || session.destination_folders.length === 0}
+                            disabled={loading || (session.destination_folders?.length ?? 0) === 0}
                             className="px-8"
                         >
                             {loading ? 'Loading...' : 'Start Sorting'}

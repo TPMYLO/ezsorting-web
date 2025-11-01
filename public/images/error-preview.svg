@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect fill="#1f2937" width="800" height="600"/>
+  <g transform="translate(400, 300)">
+    <circle fill="#7f1d1d" r="60"/>
+    <path fill="#ef4444" d="M-30-5 L-5-5 L-5,-30 L5,-30 L5,-5 L30,-5 L30,5 L5,5 L5,30 L-5,30 L-5,5 L-30,5 Z"/>
+  </g>
+  <text x="400" y="400" text-anchor="middle" fill="#ef4444" font-family="Arial, sans-serif" font-size="18">
+    Error Loading Preview
+  </text>
+  <text x="400" y="430" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="14">
+    Please check the logs for more information
+  </text>
+</svg>

@@ -15,16 +15,11 @@ class GoogleDriveService
     public function __construct()
     {
         $this->client = new Client();
-        $this->client->setClientId(config('google.client_id'));
-        $this->client->setClientSecret(config('google.client_secret'));
+        $this->client->setClientId(config('services.google.client_id'));
+        $this->client->setClientSecret(config('services.google.client_secret'));
         $this->client->setAccessType('offline');
         $this->client->setApprovalPrompt('force');
         $this->client->setScopes([Drive::DRIVE]);
-
-        // Set refresh token if available
-        if (config('google.refresh_token')) {
-            $this->client->refreshToken(config('google.refresh_token'));
-        }
 
         $this->service = new Drive($this->client);
     }
@@ -55,6 +50,14 @@ class GoogleDriveService
     }
 
     /**
+     * Get Google Client instance
+     */
+    public function getClient(): Client
+    {
+        return $this->client;
+    }
+
+    /**
      * List folders in Google Drive
      */
     public function listFolders(?string $parentId = null): array
@@ -67,21 +70,37 @@ class GoogleDriveService
 
         $optParams = [
             'q' => $query,
-            'fields' => 'files(id, name, parents, modifiedTime, webViewLink)',
+            'fields' => 'nextPageToken, files(id, name, parents, modifiedTime, webViewLink)',
             'orderBy' => 'name',
+            'pageSize' => 1000, // Get up to 1000 folders per page
         ];
 
-        $results = $this->service->files->listFiles($optParams);
+        $allFolders = [];
+        $pageToken = null;
 
-        return array_map(function ($file) {
-            return [
-                'id' => $file->getId(),
-                'name' => $file->getName(),
-                'parents' => $file->getParents(),
-                'modifiedTime' => $file->getModifiedTime(),
-                'webViewLink' => $file->getWebViewLink(),
-            ];
-        }, $results->getFiles());
+        do {
+            if ($pageToken) {
+                $optParams['pageToken'] = $pageToken;
+            }
+
+            $results = $this->service->files->listFiles($optParams);
+
+            $folders = array_map(function ($file) {
+                return [
+                    'id' => $file->getId(),
+                    'name' => $file->getName(),
+                    'parents' => $file->getParents(),
+                    'modifiedTime' => $file->getModifiedTime(),
+                    'webViewLink' => $file->getWebViewLink(),
+                ];
+            }, $results->getFiles());
+
+            $allFolders = array_merge($allFolders, $folders);
+            $pageToken = $results->getNextPageToken();
+
+        } while ($pageToken);
+
+        return $allFolders;
     }
 
     /**
@@ -105,9 +124,16 @@ class GoogleDriveService
 
         return array_map(function ($file) {
             $metadata = $file->getImageMediaMetadata();
+            $fileName = $file->getName();
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            // Detect if this is a RAW format
+            $rawFormats = ['arw', 'cr2', 'cr3', 'nef', 'nrw', 'raf', 'rw2', 'orf', 'pef', 'dng'];
+            $isRaw = in_array($extension, $rawFormats);
+
             return [
                 'id' => $file->getId(),
-                'name' => $file->getName(),
+                'name' => $fileName,
                 'mimeType' => $file->getMimeType(),
                 'size' => $file->getSize(),
                 'thumbnailLink' => $file->getThumbnailLink(),
@@ -115,6 +141,8 @@ class GoogleDriveService
                 'modifiedTime' => $file->getModifiedTime(),
                 'width' => $metadata ? $metadata->getWidth() : null,
                 'height' => $metadata ? $metadata->getHeight() : null,
+                'extension' => $extension,
+                'isRaw' => $isRaw,
             ];
         }, $results->getFiles());
     }

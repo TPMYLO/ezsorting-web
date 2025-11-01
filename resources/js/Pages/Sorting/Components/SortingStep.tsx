@@ -17,6 +17,8 @@ interface Image {
     webContentLink?: string;
     width?: number;
     height?: number;
+    extension?: string;
+    isRaw?: boolean;
 }
 
 interface SortingSession {
@@ -29,7 +31,7 @@ interface SortingSession {
     sorted_images: number;
     remaining_images: number;
     current_image_index: number;
-    status: string;
+    status: 'setup' | 'active' | 'completed' | 'paused';
 }
 
 interface Props {
@@ -131,7 +133,21 @@ export default function SortingStep({ session, onSessionUpdate, onReset }: Props
     };
 
     const getImageUrl = (image: Image): string => {
-        // Use webContentLink or construct Google Drive preview URL
+        const ext = image.extension?.toLowerCase();
+
+        // For RAW files, use our preview endpoint which converts to JPG
+        if (image.isRaw) {
+            const previewUrl = `/google/preview/${image.id}`;
+            console.log('RAW file detected, using preview URL:', previewUrl, 'for image:', image.name);
+            return previewUrl;
+        }
+
+        // For HEIC, use Google Drive's built-in preview URL
+        if (ext === 'heic') {
+            return `https://drive.google.com/uc?id=${image.id}&export=view`;
+        }
+
+        // For standard formats, use webContentLink or Google Drive URL
         if (image.webContentLink) {
             return image.webContentLink;
         }
@@ -205,6 +221,16 @@ export default function SortingStep({ session, onSessionUpdate, onReset }: Props
 
                     {/* Image Preview */}
                     <div className="relative bg-gray-900 aspect-video flex items-center justify-center">
+                        {currentImage.isRaw && (
+                            <div className="absolute top-4 left-4 z-10">
+                                <div className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>RAW Preview - Original will be sorted</span>
+                                </div>
+                            </div>
+                        )}
                         {imageLoading && (
                             <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -240,9 +266,16 @@ export default function SortingStep({ session, onSessionUpdate, onReset }: Props
                             </div>
                             <div>
                                 <span className="text-gray-500 block">Format</span>
-                                <span className="font-medium text-gray-900 uppercase">
-                                    {currentImage.name.split('.').pop()}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium text-gray-900 uppercase">
+                                        {currentImage.extension || currentImage.name.split('.').pop()}
+                                    </span>
+                                    {currentImage.isRaw && (
+                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded uppercase">
+                                            RAW
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             {currentImage.width && currentImage.height && (
                                 <div>

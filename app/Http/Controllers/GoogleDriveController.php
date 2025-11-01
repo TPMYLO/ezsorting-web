@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GoogleDriveToken;
 use App\Services\GoogleDriveService;
+use App\Services\RawImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
@@ -11,10 +12,12 @@ use Laravel\Socialite\Facades\Socialite;
 class GoogleDriveController extends Controller
 {
     protected GoogleDriveService $driveService;
+    protected RawImageService $rawImageService;
 
-    public function __construct(GoogleDriveService $driveService)
+    public function __construct(GoogleDriveService $driveService, RawImageService $rawImageService)
     {
         $this->driveService = $driveService;
+        $this->rawImageService = $rawImageService;
     }
 
     /**
@@ -22,44 +25,20 @@ class GoogleDriveController extends Controller
      */
     public function redirectToGoogle()
     {
+        // Store in session that this is a Drive access request
+        session(['google_oauth_type' => 'drive_access']);
+
         return Socialite::driver('google')
+            ->redirectUrl(route('auth.google.callback'))
             ->scopes(['https://www.googleapis.com/auth/drive'])
-            ->with(['access_type' => 'offline', 'prompt' => 'consent'])
+            ->with([
+                'access_type' => 'offline',
+                'prompt' => 'consent'
+            ])
             ->redirect();
     }
 
-    /**
-     * Handle Google OAuth callback for Drive access
-     */
-    public function handleGoogleCallback(Request $request)
-    {
-        try {
-            $googleUser = Socialite::driver('google')->user();
-            $token = $googleUser->token;
-            $refreshToken = $googleUser->refreshToken;
-            $expiresIn = $googleUser->expiresIn;
-
-            // Store or update token in database
-            GoogleDriveToken::updateOrCreate(
-                ['user_id' => Auth::id()],
-                [
-                    'access_token' => $token,
-                    'refresh_token' => $refreshToken,
-                    'expires_in' => $expiresIn,
-                    'expires_at' => now()->addSeconds($expiresIn),
-                    'google_email' => $googleUser->getEmail(),
-                ]
-            );
-
-            return redirect()->route('sorting.index')
-                ->with('success', 'Google Drive connected successfully!');
-
-        } catch (\Exception $e) {
-            \Log::error('Google Drive OAuth failed: ' . $e->getMessage());
-            return redirect()->route('sorting.index')
-                ->with('error', 'Failed to connect to Google Drive. Please try again.');
-        }
-    }
+    // handleGoogleCallback moved to SocialiteController to handle both auth and drive flows
 
     /**
      * Disconnect Google Drive
@@ -215,6 +194,125 @@ class GoogleDriveController extends Controller
                 'file' => $file
             ]);
         } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get preview for RAW or other image files
+     * This endpoint handles RAW conversion and caching
+     */
+    public function getPreview(Request $request, string $fileId)
+    {
+        try {
+            \Log::info("Preview request received for file ID: {$fileId}");
+
+            $this->setTokenFromDatabase();
+
+            // Use Google Drive Service to get file metadata (properly authenticated)
+            $driveService = new \Google\Service\Drive($this->driveService->getClient());
+            $file = $driveService->files->get($fileId, [
+                'fields' => 'name,mimeType,fileExtension'
+            ]);
+
+            $fileName = $file->getName() ?? 'unknown';
+            $mimeType = $file->getMimeType() ?? 'unknown';
+
+            // Get extension from fileExtension field or from filename
+            $extension = '';
+            $fileExtension = $file->getFileExtension();
+            if (!empty($fileExtension)) {
+                $extension = strtolower($fileExtension);
+            } elseif ($fileName !== 'unknown') {
+                $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            }
+
+            \Log::info("File metadata", [
+                'name' => $fileName,
+                'extension' => $extension,
+                'mimeType' => $mimeType
+            ]);
+
+            // Check if it's a RAW format
+            $rawFormats = ['arw', 'cr2', 'cr3', 'nef', 'nrw', 'raf', 'rw2', 'orf', 'pef', 'dng'];
+            $isRaw = in_array($extension, $rawFormats);
+
+            if ($isRaw) {
+                \Log::info("Detected RAW format, attempting to generate preview");
+
+                // Use RAW image service to get or create preview
+                $previewUrl = $this->rawImageService->getOrCreatePreview(
+                    $fileId,
+                    $fileName,
+                    $this->driveService->getClient()
+                );
+
+                if ($previewUrl) {
+                    \Log::info("Preview created successfully, redirecting to: {$previewUrl}");
+                    // Redirect to the cached preview
+                    return redirect($previewUrl);
+                }
+
+                \Log::warning("Failed to generate preview for RAW file: {$fileName}");
+
+                // If preview creation failed, return a placeholder image
+                return response()->file(public_path('images/no-preview.svg'), [
+                    'Content-Type' => 'image/svg+xml',
+                ]);
+            }
+
+            // For non-RAW files, use standard Google Drive preview
+            \Log::info("Non-RAW file, redirecting to Google Drive preview");
+            return redirect("https://drive.google.com/uc?id={$fileId}&export=view");
+
+        } catch (\Exception $e) {
+            \Log::error('Preview fetch failed: ' . $e->getMessage(), [
+                'exception' => $e->getTraceAsString(),
+                'file_id' => $fileId
+            ]);
+
+            // Return error as image instead of JSON to prevent frontend breaking
+            return response()->file(public_path('images/error-preview.svg'), [
+                'Content-Type' => 'image/svg+xml',
+            ]);
+        }
+    }
+
+    /**
+     * Proxy thumbnail from Google Drive
+     * This allows us to display thumbnails with authentication
+     */
+    public function getThumbnail(Request $request, string $fileId)
+    {
+        try {
+            $this->setTokenFromDatabase();
+
+            // Get file metadata to get thumbnail link
+            $file = $this->driveService->getClient()->getHttpClient()->get(
+                "https://www.googleapis.com/drive/v3/files/{$fileId}?fields=thumbnailLink"
+            );
+
+            $fileData = json_decode($file->getBody()->getContents(), true);
+
+            if (!isset($fileData['thumbnailLink'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No thumbnail available'
+                ], 404);
+            }
+
+            // Download thumbnail
+            $thumbnail = $this->driveService->getClient()->getHttpClient()->get($fileData['thumbnailLink']);
+
+            return response($thumbnail->getBody()->getContents())
+                ->header('Content-Type', 'image/jpeg')
+                ->header('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+
+        } catch (\Exception $e) {
+            \Log::error('Thumbnail fetch failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()

@@ -24,6 +24,8 @@ interface SortingSession {
         webContentLink?: string;
         width?: number;
         height?: number;
+        extension?: string;
+        isRaw?: boolean;
     }>;
     total_images: number;
     sorted_images: number;

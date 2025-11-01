@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect fill="#1f2937" width="800" height="600"/>
+  <g transform="translate(400, 300)">
+    <circle fill="#374151" r="60"/>
+    <path fill="#9ca3af" d="M-30-10 L-30,10 L-10,10 L-10,30 L10,30 L10,10 L30,10 L30,-10 L10,-10 L10,-30 L-10,-30 L-10,-10 Z"/>
+  </g>
+  <text x="400" y="400" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="18">
+    RAW Preview Not Available
+  </text>
+  <text x="400" y="430" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="14">
+    The original RAW file will still be sorted correctly
+  </text>
+</svg>
